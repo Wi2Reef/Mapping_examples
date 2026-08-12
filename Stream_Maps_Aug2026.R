@@ -13,7 +13,7 @@ library(rnaturalearthdata)
 
 
 # ------------------------------------------------------------
-# 2. Download Wisconsin DNR stream data
+# 2. Download Wisconsin DNR stream data and load sites
 # ------------------------------------------------------------
 
 # Wisconsin DNR 24K Rivers and Streams ArcGIS service
@@ -29,6 +29,10 @@ stream_url <- paste0(
 )
 
 wi_streams <- st_read(stream_url)
+
+SurveySites<-read.csv("2026_GPSLocations.csv")
+#rename column names as Latitude and Longitude
+SurveySites<-SurveySites %>% rename(Latitude = Lat, Longitude = Lon)
 
 
 # ------------------------------------------------------------
@@ -154,22 +158,29 @@ pigeon_main <- sheboygan_streams[
 
 
 # ------------------------------------------------------------
-# 9. Download Lake Michigan polygon
+# 9. Download Lake Michigan and Silver Lake polygons from Wi DNR
 # ------------------------------------------------------------
 
-# Natural Earth provides polygons for major lakes.
 
-lakes <- ne_download(
-  scale = 10,
-  type = "lakes",
-  category = "physical",
-  returnclass = "sf"
+
+lake_url <- paste0(
+  "https://dnrmaps.wi.gov/arcgis/rest/services/",
+  "ER_Biotics/ER_Biotics_WGS84_Hydro/MapServer/0/query?",
+  "where=1%3D1",
+  "&outFields=*",
+  "&returnGeometry=true",
+  "&f=geojson"
 )
 
-# Keep only Lake Michigan.
+wi_lakes <- st_read(lake_url)
 
-lake_michigan <- lakes[
-  lakes$name == "Lake Michigan",
+lake_michigan_wdnr <- wi_lakes[
+  wi_lakes$WATERBODY_NAME == "Lake Michigan",
+]
+
+
+silverlake_wdnr <- wi_lakes[
+  wi_lakes$WATERBODY_NAME == "Silver Lake",
 ]
 
 
@@ -201,10 +212,10 @@ pigeon_map <- ggplot() +
     linewidth = 1.3
   ) +
   
-  # Add Lake Michigan as a gray polygon.
+  # Lake Michigan background.
   geom_sf(
-    data = lake_michigan,
-    fill = "grey80",
+    data = lake_michigan_wdnr,
+    fill = "grey75",
     color = "grey60",
     linewidth = 0.4
   ) +
@@ -410,13 +421,21 @@ silver_main <- manitowoc_streams[
 
 silver_map <- ggplot() +
   
-  # # Lake Michigan background.
-  # geom_sf(
-  #   data = lake_michigan,
-  #   fill = "grey75",
-  #   color = "grey60",
-  #   linewidth = 0.4
-  # ) +
+  # Lake Michigan background.
+  geom_sf(
+    data = lake_michigan_wdnr,
+    fill = "grey75",
+    color = "grey60",
+    linewidth = 0.4
+  ) +
+
+  # Silver Lake Polygon
+  geom_sf(
+    data = silverlake_wdnr,
+    fill = "grey75",
+    color = "grey60",
+    linewidth = 0.4
+  ) +
   
   # Plot all surrounding streams in light gray.
   geom_sf(
@@ -479,6 +498,17 @@ silver_map <- ggplot() +
     size = 5
   ) +
   
+  # Label Silver Lake
+  annotate(
+    geom = "text",
+    x = -87.74,
+    y = 44.064,
+    label = "Silver Lake",
+    fontface = "italic",
+    color = "grey40",
+    size = 4
+  ) +
+  
   # Add scale bar.
   annotation_scale(
     location = "bl",
@@ -511,3 +541,24 @@ SurveySites<-read.csv("2026_GPSLocations.csv")
 #rename column names as Latitude and Longitude
 SurveySites<-SurveySites %>% rename(Latitude = Lat, Longitude = Lon)
 
+
+
+lake_url <- paste0(
+  "https://dnrmaps.wi.gov/arcgis/rest/services/",
+  "ER_Biotics/ER_Biotics_WGS84_Hydro/MapServer/0/query?",
+  "where=1%3D1",
+  "&outFields=*",
+  "&returnGeometry=true",
+  "&f=geojson"
+)
+
+wi_lakes <- st_read(lake_url)
+
+lake_michigan_wdnr <- wi_lakes[
+  wi_lakes$WATERBODY_NAME == "Lake Michigan",
+]
+
+
+silverlake_wdnr <- wi_lakes[
+  wi_lakes$WATERBODY_NAME == "Silver Lake",
+]
